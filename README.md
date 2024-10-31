@@ -1,2 +1,2 @@
-# TU_AIR
-Advanced Information Retrieval Project @ TU Graz, WS24
+# Advanced Information Retrieval Project @ TU Graz, WS24
+
