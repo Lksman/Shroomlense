@@ -108,12 +108,12 @@ class MushroomCrawler:
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
+    web_driver = webdriver.Chrome(options=chrome_options)
 
     # timeout settings
-    chrome_options.set_page_load_timeout(CRAWL_TIMEOUT_SEC)
-    chrome_options.set_script_timeout(CRAWL_TIMEOUT_SEC)   
-  
-    web_driver = webdriver.Chrome(options=chrome_options)
+    web_driver.set_page_load_timeout(CRAWL_TIMEOUT_SEC)
+    web_driver.set_script_timeout(CRAWL_TIMEOUT_SEC)   
+
     return web_driver
 
   def crawl_mushroom_catalog(self, mushroom_catalog: MushroomCatalog):
