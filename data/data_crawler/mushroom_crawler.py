@@ -1,22 +1,48 @@
+"""
+This module creates the dataset. Steps:
+0) Initialize the MushroomCrawler object.
+1) Read all CSV files of the specified folder structure.
+2) Use Selenium with the URI of each CSV row to download images.
+3) Resize the shortest side of each image to 256px.
+4) Save compressed images to the specified output directory.
+
+Notes:
+- The CSV files keep track of which observations have already been handled/downloaded.
+- Selenium is used because doing a simple request only retrieves simplified HTML with only a single image per "observation".
+- Random sleeps are added to reduce load on the server and make crawling "less suspicious".
+  - This also means that crawling takes much longer but we got enough time.
+- Some classes have much more data than others, like 150 vs 3000 images
+"""
+
 import os
-import pandas as pd
-from dataclasses import dataclass
-import requests
-from bs4 import BeautifulSoup
 import time
+import random
+from dataclasses import dataclass
 from PIL import Image
 
-# Don't cause too much load on the server
-REQUEST_RATE_LIMITER = 0.5
+import pandas as pd
+import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+
+
+CRAWL_DELAY_SEC = (1, 3)
+CRAWL_TIMEOUT_SEC = 30
+
+CRAWL_STATUS_NOT_CRAWLED = 0
+CRAWL_STATUS_SUCCESS = 1
+CRAWL_STATUS_BAD_OBSERVATION = 2
+CRAWL_STATUS_FAILED = -1
 
 @dataclass
-class CsvFileEntry:
+class MushroomCatalog:
   edibility: str
-  mushroom: str # species
+  mushroom_name: str
   csv_path: str
 
   def __repr__(self):
-    return f"{self.edibility}, {self.mushroom}, {self.csv_path}"
+    return f"{self.edibility}, {self.mushroom_name}, {self.csv_path}"
   
   def __str__(self):
     return self.__repr__()
@@ -25,38 +51,42 @@ class CsvFileEntry:
 class MushroomCrawler:
   default_base_path = os.path.join(os.getcwd(), "data", "data_crawler", "csv_files")
   default_edibilities = ["deadly", "edible", "not_edible", "poisonous"]
-  output_dir_path = os.path.join(os.getcwd(), "data", "data_crawler", "output")
+  output_dir_root = os.path.join(os.getcwd(), "data", "data_crawler", "output")
 
-  def __init__(self, base_path: str = default_base_path, edibilities: list[str] = default_edibilities, output_dir_path: str = output_dir_path):
+  def __init__(self, base_path: str = default_base_path, edibilities: list[str] = default_edibilities, output_dir_path: str = output_dir_root):
     self.base_path = base_path
     self.edibilities = edibilities
-    self.output_dir_path = output_dir_path
-    self.csv_file_entries = self.init_csv_file_entries()
+    self.output_dir_root = output_dir_path
+    self.mushroom_catalogs = self.init_mushroom_catalogs()
+    self.web_driver = self.init_web_driver()
     
-  def init_csv_file_entries(self) -> list[CsvFileEntry]:
-    csv_file_entries: list[CsvFileEntry] = []
+  def init_mushroom_catalogs(self) -> list[MushroomCatalog]:
+    mushroom_catalogs: list[MushroomCatalog] = []
     for edibility in self.edibilities:
       edibility_path = os.path.join(self.base_path, edibility)
-      csv_file_entry = self.get_folder_csv_file_entries(edibility, edibility_path)
-      csv_file_entries.extend(csv_file_entry)
+      mushroom_catalog = self.create_mushroom_catalogs(edibility, edibility_path)
+      mushroom_catalogs.extend(mushroom_catalog)
 
     if len(self.edibilities) == 0:
       edibility = "undefined"
       edibility_path = self.base_path
-      csv_file_entry = self.get_folder_csv_file_entries(edibility, edibility_path)
-      csv_file_entries.append(csv_file_entry)
+      mushroom_catalog = self.create_mushroom_catalogs(edibility, edibility_path)
+      mushroom_catalogs.append(mushroom_catalog)
 
 
-    return csv_file_entries
+    return mushroom_catalogs
   
-  def get_folder_csv_file_entries(self, edibility: str, edibility_path: str) -> list[CsvFileEntry]:
+  def create_mushroom_catalogs(self, edibility: str, edibility_path: str) -> list[MushroomCatalog]:
+    """
+    Creates a list of MushroomCatalog objects for each CSV file in the given edibility folder.
+    """
     csv_files = [file for file in os.listdir(edibility_path) if file.endswith('.csv')]
-    csv_file_entries: list[CsvFileEntry] = [] 
+    mushroom_catalogs: list[MushroomCatalog] = [] 
     for csv_file in csv_files:
       mushroom = csv_file.replace(".csv", "")
-      csv_file_entry = CsvFileEntry(edibility, mushroom, os.path.join(edibility_path, csv_file))
-      csv_file_entries.append(csv_file_entry)
-    return csv_file_entries
+      mushroom_catalog = MushroomCatalog(edibility, mushroom, os.path.join(edibility_path, csv_file))
+      mushroom_catalogs.append(mushroom_catalog)
+    return mushroom_catalogs
   
   def crawl(self, mushroom: str = None):
     """
@@ -67,96 +97,178 @@ class MushroomCrawler:
 
     :param str mushroom: If provided, only crawl entries for this specific mushroom species. Defaults to None which crawls all mushrooms.
     """
-    for csv_file_entry in self.csv_file_entries:
-      if mushroom and csv_file_entry.mushroom != mushroom:
+    for mushroom_catalog in self.mushroom_catalogs:
+      if mushroom and mushroom_catalog.mushroom_name != mushroom:
         continue
-      self.crawl_csv_file_entry(csv_file_entry)
+      self.crawl_mushroom_catalog(mushroom_catalog)
 
-  def crawl_csv_file_entry(self, csv_file_entry: CsvFileEntry):
-    df = pd.read_csv(csv_file_entry.csv_path)
+  def init_web_driver(self):
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+
+    # timeout settings
+    chrome_options.set_page_load_timeout(CRAWL_TIMEOUT_SEC)
+    chrome_options.set_script_timeout(CRAWL_TIMEOUT_SEC)   
+  
+    web_driver = webdriver.Chrome(options=chrome_options)
+    return web_driver
+
+  def crawl_mushroom_catalog(self, mushroom_catalog: MushroomCatalog):
+    """
+    Iterate through each row of the CSV file and process the URI.
+    """
+
+    df = pd.read_csv(mushroom_catalog.csv_path)
     
     if "crawled" not in df.columns:
-      df["crawled"] = 0
+      df["crawled"] = CRAWL_STATUS_NOT_CRAWLED
 
+    print(f"Crawling {mushroom_catalog.mushroom_name} ({mushroom_catalog.edibility})")
     for index, row in df.iterrows():
-      if (index+1) % 100 == 0 or index == len(df)-1:
-        print(f"Crawling row {index+1} of {len(df)} [{csv_file_entry.mushroom} ({csv_file_entry.edibility})]")
-      if df.at[index, "crawled"] != 0:
+      # update progress bar
+      percentage = round(((index+1) / len(df)) * 100)
+      print(f"\r{self.progress_percentage_to_string(percentage)} {index+1} of {len(df)} {row['_id']}", end='', flush=True)
+
+      if int(df.at[index, "crawled"]) != CRAWL_STATUS_NOT_CRAWLED:
         continue
       
-      self.process_row(row, csv_file_entry)
+      success_state = self.process_row(row, mushroom_catalog)
+      df.at[index, "crawled"] = success_state
 
-      if index == 6:
-        df.to_csv(csv_file_entry.csv_path, index=False)
-        break
+      # periodically save progress
+      if index > 0 and index % 20 == 0:
+        df.to_csv(mushroom_catalog.csv_path, index=False)
     
-    # df.to_csv(csv_file_entry.csv_path, index=False)
+    df.to_csv(mushroom_catalog.csv_path, index=False)
+    print(f"Finished crawling {mushroom_catalog.mushroom_name} ({mushroom_catalog.edibility})")
   
-  def process_row(self, row: pd.Series, csv_file_entry: CsvFileEntry):
+  def process_row(self, row: pd.Series, mushroom_catalog: MushroomCatalog):
     allowed_validation_statuses = ["approved", "expert approved"]
     validation_status = row["validationStatus"]
 
     if validation_status not in allowed_validation_statuses:
-      row["crawled"] = 2
-      return
-    row["crawled"] = 1
+      return CRAWL_STATUS_BAD_OBSERVATION
+    
+    if not self.request_uri(row["URI"]):
+      return CRAWL_STATUS_FAILED
+    
+    image_urls = self.get_mushroom_image_urls()
+    output_directory = os.path.join(self.output_dir_root, mushroom_catalog.edibility, mushroom_catalog.mushroom_name)
+    if not self.download_images(image_urls, row["_id"], output_directory):
+      return CRAWL_STATUS_FAILED
+    
+    return CRAWL_STATUS_SUCCESS
+  
+  def sleep(self):
+    """
+    Sleep to prevent overloading the server. Define multiple sleep conditions to make crawling less suspicious.
+    """
+    seconds = random.uniform(CRAWL_DELAY_SEC[0], CRAWL_DELAY_SEC[1])
+    if random.random() < 0.1:
+      seconds += random.uniform(0.5, 1.5)
+    if random.random() < 0.01:
+      seconds += random.uniform(3, 10)
+    if random.random() < 0.001:
+      seconds += random.uniform(20, 40)
 
-    row_id = row["_id"]
-    row_uri = row["URI"]
-    html_content = self.get_uri_content(row_uri)
-    image_urls = self.get_mushroom_image_urls(html_content)
+    time.sleep(seconds)
 
+  def request_uri(self, uri: str):
+    try:
+      self.web_driver.get(uri)
+      self.sleep()
+      return True
+    except Exception as err:
+      print(f"Error fetching URI {uri}: {str(err)}")
+      self.sleep()
+      return False
+  
+  def get_mushroom_image_urls(self):
+    """
+    Images are contained within a grid tile element.
+    """
+    try:
+      image_urls = []
+      grid_tiles = self.web_driver.find_elements(By.CSS_SELECTOR, "md-grid-tile")
+      
+      for tile in grid_tiles:
+        style = tile.get_attribute("style")
+        if style and "background-image" in style:
+          url_start = style.find('url("') + 5
+          url_end = style.find('")', url_start)
+          url = style[url_start:url_end]
+          if url:
+            image_urls.append(url)
+      
+      unique_image_urls = list(set(image_urls))
+      return unique_image_urls
+    except Exception as err:
+      print(f"Error extracting image URLs: {str(err)}")
+      return []
+  
+  def download_images(self, image_urls: list[str], row_id: str, output_directory: str):
     # Create directory structure if it doesn't exist
-    image_dir = os.path.join(self.output_dir_path, csv_file_entry.edibility, csv_file_entry.mushroom)
-    os.makedirs(image_dir, exist_ok=True)
+    os.makedirs(output_directory, exist_ok=True)
+    mushroom_name = os.path.basename(output_directory)
+    success = True
 
-    for index, image_url in enumerate(image_urls):
-      try:
+    try:
+      for index, image_url in enumerate(image_urls):
         response = requests.get(image_url, stream=True)
         response.raise_for_status()
         
-        img = Image.open(response.raw)
+        image = Image.open(response.raw)
+        image = self.process_image(image)
         filename = row_id if index == 0 else f"{row_id}_{index+1}"
-        img.save(os.path.join(image_dir, f"{filename}.jpg"))
-      
-        time.sleep(REQUEST_RATE_LIMITER)  # Respect rate limiting
-        
-      except requests.RequestException as err:
-        print(f"Error downloading image {image_url}: {str(err)}")
-        continue
-    print(image_urls)
+        filename = f"{mushroom_name}_{filename}.jpg"
+        image.save(os.path.join(output_directory, filename), optimize=True, quality=75)
+        self.sleep()
+      return success
+    except Exception as err:
+      print(f"Error downloading image {image_url}:\n {str(err)}")
+      return not success
 
-  def get_uri_content(self, uri: str):
-    try:
-      res = requests.get(uri)
-      time.sleep(REQUEST_RATE_LIMITER)
-      res.raise_for_status()
-      content = res.text
-      return content
-    except requests.RequestException as err:
-      print(f"Error fetching URI {uri}: {str(err)}")
-      return None
-  
-  def get_mushroom_image_urls(self, html_content: str):
-    if not html_content:
-      return []
-        
-    soup = BeautifulSoup(html_content, "html.parser")
-    image_urls = []
+  def process_image(self, image: Image.Image, size: int = 256):
+    width, height = image.size
+
+    if image.mode != "RGB":
+      image = image.convert("RGB")
     
-    # Find all og:image meta tags
-    og_images = soup.find_all("meta", property="og:image")
-    for og_image in og_images:
-      url = og_image.get("content")
-      if url:
-        image_urls.append(url)
-            
-    return list(set(image_urls))  # Remove duplicates
+    # Resize based on the shorter side
+    if width < height:
+        new_width = size
+        new_height = int((height / width) * size)
+    else:
+        new_width = int((width / height) * size)
+        new_height = size
+    
+    image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    return image
 
+  def progress_percentage_to_string(self, percentage: int):
+    """
+    Printing the percentage in color is of utmost importance.
+    """
+
+    string = ""
+    if percentage < 20:
+      string += "\033[31m" # red
+    elif percentage < 40:
+      string += "\033[35m" # purple
+    elif percentage < 60:
+      string += "\033[34m" # blue
+    elif percentage < 80:
+      string += "\033[36m" # cyan
+    else:
+      string += "\033[32m" # green
+
+    string += f"[{percentage}%]\033[0m"
+    return string
 
 if __name__ == "__main__":
   crawler = MushroomCrawler()
-  # crawler.crawl()
-
-  chanterelle_entry = [entry for entry in crawler.csv_file_entries if entry.mushroom == "Craterellus_cinereus"][0]
-  crawler.crawl_csv_file_entry(chanterelle_entry)
+  crawler.crawl() # crawls all mushrooms
+  # crawler.crawl("Craterellus_cinereus") # crawls a specific mushroom
