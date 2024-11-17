@@ -27,7 +27,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 
-CRAWL_DELAY_SEC = (1, 3)
+CRAWL_DELAY_SEC = (1, 2)
 CRAWL_TIMEOUT_SEC = 30
 
 CRAWL_STATUS_NOT_CRAWLED = 0
@@ -59,7 +59,8 @@ class MushroomCrawler:
     self.output_dir_root = output_dir_path
     self.mushroom_catalogs = self.init_mushroom_catalogs()
     self.web_driver = self.init_web_driver()
-    
+    self.rerun_failed = False # If True, tries to rerun failed observations again.
+
   def init_mushroom_catalogs(self) -> list[MushroomCatalog]:
     mushroom_catalogs: list[MushroomCatalog] = []
     for edibility in self.edibilities:
@@ -72,7 +73,6 @@ class MushroomCrawler:
       edibility_path = self.base_path
       mushroom_catalog = self.create_mushroom_catalogs(edibility, edibility_path)
       mushroom_catalogs.append(mushroom_catalog)
-
 
     return mushroom_catalogs
   
@@ -87,6 +87,9 @@ class MushroomCrawler:
       mushroom_catalog = MushroomCatalog(edibility, mushroom, os.path.join(edibility_path, csv_file))
       mushroom_catalogs.append(mushroom_catalog)
     return mushroom_catalogs
+
+  def set_rerun_failed(self, rerun_failed: bool):
+    self.rerun_failed = rerun_failed
   
   def crawl(self, mushroom: str = None):
     """
@@ -132,9 +135,14 @@ class MushroomCrawler:
       percentage = round(((index+1) / len(df)) * 100)
       print(f"\r{self.progress_percentage_to_string(percentage)} {index+1} of {len(df)} {row['_id']}", end='', flush=True)
 
-      if int(df.at[index, "crawled"]) != CRAWL_STATUS_NOT_CRAWLED:
-        continue
-      
+      crawl_status = int(df.at[index, "crawled"])
+      if crawl_status != CRAWL_STATUS_NOT_CRAWLED:
+        if crawl_status == CRAWL_STATUS_FAILED: 
+          if not self.rerun_failed:
+            continue
+        else:
+          continue
+
       success_state = self.process_row(row, mushroom_catalog)
       df.at[index, "crawled"] = success_state
 
@@ -168,7 +176,7 @@ class MushroomCrawler:
     """
     seconds = random.uniform(CRAWL_DELAY_SEC[0], CRAWL_DELAY_SEC[1])
     if random.random() < 0.1:
-      seconds += random.uniform(0.5, 1.5)
+      seconds += random.uniform(0, 2)
     if random.random() < 0.01:
       seconds += random.uniform(3, 10)
     if random.random() < 0.001:
@@ -270,5 +278,6 @@ class MushroomCrawler:
 
 if __name__ == "__main__":
   crawler = MushroomCrawler()
+  crawler.set_rerun_failed(False) # uncomment to rerun failed observations
   crawler.crawl() # crawls all mushrooms
   # crawler.crawl("Craterellus_cinereus") # crawls a specific mushroom
