@@ -1,1 +1,10 @@
 *.png
+*.jpg
+*.log
+
+
+!**/plots/*
+
+**/venv/
+
+__pycache__/
