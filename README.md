@@ -2,5 +2,5 @@
 
 ## Architecture
 
-![Architecture](Lukas/plots/AIR_G7_Architecture.png)
+![Architecture](Lukas/plots/AIR_G7_Architecture_vertical.png)
 
