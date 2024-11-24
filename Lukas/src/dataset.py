@@ -210,7 +210,7 @@ def prepare_datasets(data_dir, val_split=0.2, augment: bool =True):
     indices = list(range(len(base_dataset)))
     labels = [label for _, label in base_dataset]
     
-    # stratified split
+    # stratified split. TODO: take class-level augmentations into account
     logger.info(f"Splitting dataset into {(1 - val_split) * 100}% training and {val_split * 100}% validation set (stratified).")
     train_idx, val_idx = train_test_split(
         indices, 

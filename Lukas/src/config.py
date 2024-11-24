@@ -44,7 +44,7 @@ class Config:
     
     # Image parameters
     IMAGE_SIZE = 224  # input size of vgg19
-    MEAN = [0.485, 0.456, 0.406]  # ImageNet normalization
+    MEAN = [0.485, 0.456, 0.406]  # ImageNet normalization # TODO: Calculate mean and std from dataset
     STD = [0.229, 0.224, 0.225]
     
     # Logging settings
