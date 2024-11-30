@@ -2,7 +2,7 @@ import wikipedia
 import bs4
 import requests
 from flask_restx import Resource, Namespace
-from src.config import get_logger
+from src.utils import get_logger
 
 
 logger = get_logger(__name__)
