@@ -198,8 +198,8 @@ class BalancedDataset(Dataset):
 
 
 
-def prepare_datasets(data_dir, val_split=0.2, augment: bool =True):
-    """Prepare and split datasets with stratified sampling"""
+def prepare_datasets(data_dir, train_val_split=0.2, val_test_split=0.5, augment: bool =True):
+    """Prepare and split datasets with stratified sampling. Returns train, val, test subsets."""
 
     logger.info(f"Loading base dataset from {data_dir}")
     base_dataset = MushroomDataset(
@@ -207,14 +207,16 @@ def prepare_datasets(data_dir, val_split=0.2, augment: bool =True):
         transform=get_base_transforms()
     )
 
+    # TODO: calculate mean and std pixel values of the dataset here. replace the MEAN and STD in config.py with the calculated values
+
     indices = list(range(len(base_dataset)))
     labels = [label for _, label in base_dataset]
     
     # stratified split. TODO: take class-level augmentations into account
-    logger.info(f"Splitting dataset into {(1 - val_split) * 100}% training and {val_split * 100}% validation set (stratified).")
+    logger.info(f"Splitting dataset into {(1 - train_val_split) * 100}% training and {train_val_split * 100}% validation set (stratified).")
     train_idx, val_idx = train_test_split(
         indices, 
-        test_size=val_split,
+        test_size=train_val_split,
         stratify=labels,
         random_state=Config.SEED
     )
@@ -234,4 +236,14 @@ def prepare_datasets(data_dir, val_split=0.2, augment: bool =True):
     else:
         train_dataset = train_subset
 
-    return train_dataset, val_subset
+    val_labels = [labels[i] for i in val_idx]
+    val_idx, test_idx = train_test_split(
+        val_idx,
+        test_size=val_test_split,
+        stratify=val_labels,
+        random_state=Config.SEED
+    )
+
+    test_subset = torch.utils.data.Subset(base_dataset, test_idx)
+
+    return train_dataset, val_subset, test_subset

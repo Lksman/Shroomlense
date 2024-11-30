@@ -8,3 +8,9 @@ scikit-learn>=1.0.0  # for metrics and train/test splitting
 # Visualization and utilities
 matplotlib>=3.5.0
 
+# api
+flask
+flask-restx
+
+wikipedia
+

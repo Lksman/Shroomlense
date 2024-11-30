@@ -5,8 +5,8 @@ PROJECT_ROOT = Path(__file__).parent.parent
 class Config:
     # Data paths relative to project root
     DATA_DIR = PROJECT_ROOT.parent / "data/mushroom_50k_v1"
-    CHECKPOINT_DIR = PROJECT_ROOT / "checkpoints"
     MODELS_DIR = PROJECT_ROOT / "models"
+    CHECKPOINT_DIR = MODELS_DIR / "checkpoints"
     PLOTS_DIR = PROJECT_ROOT / "plots"
     INTERMEDIATE_DATA_DIR = PROJECT_ROOT.parent / "data/intermediate"
     
@@ -52,3 +52,11 @@ class Config:
     LOG_DIR = Path("logs")
     LOG_FORMAT = '[%(asctime)s] [%(levelname)-8s] --- %(message)s (%(filename)s:%(lineno)d)'
     
+
+    # API settings    
+    API_TITLE = "Mushroom API"
+    API_VERSION = "0.1"
+    API_DESCRIPTION = "API for mushroom species classification"
+    HOST = "0.0.0.0"
+    PORT = 5000
+

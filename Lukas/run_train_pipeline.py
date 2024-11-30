@@ -21,7 +21,7 @@ def main():
     args = parse_cli_args()
     
     logger.info(f"Preparing datasets from {Config.DATA_DIR}")
-    train_dataset, val_dataset = prepare_datasets(Config.DATA_DIR)
+    train_dataset, val_dataset, test_dataset = prepare_datasets(Config.DATA_DIR)
     
     train_loader = DataLoader(
         train_dataset,

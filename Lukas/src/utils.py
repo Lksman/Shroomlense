@@ -5,7 +5,7 @@ import torch
 
 from src.config import Config
 ####################################################################################
-# Disclaimer: To prevent self-plagiarism, I (Lukas) have implemented and used this #
+# Disclaimer to prevent self-plagiarism: I (Lukas) have implemented and used this  #
 # logger in other TU Projects before. (NLP, KDDM2, ...)                            #
 ####################################################################################
 
