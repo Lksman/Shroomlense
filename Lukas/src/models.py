@@ -1,6 +1,9 @@
+import torch
 from torch.types import Tensor
 import torch.nn as nn
 from torchvision.models import vgg19, VGG19_Weights
+from transformers import ViTForImageClassification
+from src.config import Config
 
 class MushroomVGG19(nn.Module):
     def __init__(self, num_classes: int):
@@ -8,12 +11,25 @@ class MushroomVGG19(nn.Module):
         # Load pretrained VGG19
         self.vgg19 = vgg19(weights=VGG19_Weights.DEFAULT)
         
-        # Replace the classifier
+        # Replace classifier
         num_features = self.vgg19.classifier[6].in_features
         self.vgg19.classifier[6] = nn.Linear(num_features, num_classes)
 
     def forward(self, x: Tensor) -> Tensor:
         return self.vgg19(x)
+
+
+class MushroomViT(nn.Module):
+    def __init__(self, num_classes: int):
+        super().__init__()
+        self.vit = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224')
+        self.vit.classifier = nn.Linear(self.vit.config.hidden_size, num_classes)
+
+    def forward(self, x: Tensor) -> Tensor:
+        # expects shape: (batch_size, channels, height, width)
+        outputs = self.vit(x)
+        return outputs.logits
+    
 
 class MushroomCNN(nn.Module):
     def __init__(self, num_classes: int):
@@ -57,3 +73,24 @@ class MushroomCNN(nn.Module):
         x = self.adaptive_pool(x)
         x = self.classifier(x)
         return x 
+
+
+def create_model(model_name: str, num_classes: int) -> tuple[torch.nn.Module, dict]:
+    """Create model and get its config."""
+    model_mapping = {
+        'cnn': MushroomCNN,
+        'vgg19': MushroomVGG19,
+        'vit': MushroomViT
+    }
+    
+    if model_name not in Config.MODEL_CONFIGS:
+        raise ValueError(f"Unknown model: {model_name}")
+    
+    config = Config.MODEL_CONFIGS[model_name]
+    model_class = model_mapping[model_name]
+    model = model_class(num_classes)
+    
+    if torch.cuda.is_available():
+        model = model.cuda()
+        
+    return model, config

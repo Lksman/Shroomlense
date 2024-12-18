@@ -4,13 +4,16 @@ torchvision>=0.15.0 # better to install manually with cuda
 numpy>=1.21.0
 tqdm>=4.65.0
 scikit-learn>=1.0.0  # for metrics and train/test splitting
+transformers>=4.0.0
+dask[dataframe]>=2024.12.0 # for lazy loading of images, otherwise OOM errors
+pandas>=2.0.0  # required for dask dataframes
 
 # Visualization and utilities
 matplotlib>=3.5.0
+seaborn>=0.13.0
 
 # api
 flask
 flask-restx
 
 wikipedia
-

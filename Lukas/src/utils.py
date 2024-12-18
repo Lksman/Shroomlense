@@ -2,6 +2,9 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import torch
+from datetime import datetime
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from src.config import Config
 ####################################################################################
@@ -62,7 +65,7 @@ class CustomLogger(logging.Logger):
         Add console handler with colored output
         """
         console_handler = logging.StreamHandler()
-        color_formatter = ColoredFormatter(Config.LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S')
+        color_formatter = ColoredFormatter('[%(asctime)s] [%(levelname)-8s] --- %(message)s (%(filename)s:%(lineno)d)', datefmt='%Y-%m-%d %H:%M:%S')
         console_handler.setFormatter(color_formatter)
         self.addHandler(console_handler)
 
@@ -77,7 +80,7 @@ class CustomLogger(logging.Logger):
         backup_count : int
             Number of backup log files to keep
         """
-        file_formatter = logging.Formatter(Config.LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S')
+        file_formatter = logging.Formatter('[%(asctime)s] [%(levelname)-8s] --- %(message)s (%(filename)s:%(lineno)d)', datefmt='%Y-%m-%d %H:%M:%S')
         
         # Define log levels and their corresponding file names
         log_levels = {
@@ -115,18 +118,43 @@ def get_logger(name: str) -> CustomLogger:
     """
     return CustomLogger(name)
 
+def save_model(model: torch.nn.Module, model_name: str, metrics: dict, save_dir: Path) -> Path:
+    """Save model weights and metadata.
+    
+    Args:
+        model: The model to save
+        model_name: Name of the model architecture
+        metrics: Dictionary containing evaluation metrics
+        save_dir: Directory to save the model
+        
+    Returns:
+        Path to the saved weights file
+    """
+    # Create model directory structure
+    model_dir = save_dir / model_name
+    model_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Save model weights
+    weights_path = model_dir / 'best_model.pth'
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'metrics': metrics,
+        'architecture': model_name,
+        'timestamp': datetime.now().isoformat()
+    }, weights_path)
+    return weights_path
 
-def load_checkpoint(model, checkpoint_path: Path) -> bool:
-    """Load model from checkpoint"""
-    try:
-        state_dict = torch.load(checkpoint_path, map_location=Config.DEVICE)
-        model.load_state_dict(state_dict)
-        logger.info(f"Successfully loaded model from {checkpoint_path}")
-        return True
-    except Exception as e:
-        logger.error(f"Error loading model from {checkpoint_path}: {e}")
-        return False
-
+def plot_class_distribution(data: dict, title: str, xlabel: str, ylabel: str, save_path: Path) -> None:
+    """Plot a bar chart of class distribution using seaborn."""
+    plt.figure(figsize=(12, 6))
+    sns.barplot(x=list(range(len(data))), y=list(data.values()))
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.xticks(rotation=45)  # Rotate x-labels for better readability if needed
+    plt.tight_layout()  # Adjust layout to prevent label cutoff
+    plt.savefig(save_path)
+    plt.close()
 
 
 if __name__ == '__main__':

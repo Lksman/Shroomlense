@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 import torch.nn as nn
 from sklearn.metrics import f1_score
 
-from src.utils import get_logger
+from src.utils import get_logger, save_model
 from src.config import Config
+from src.dataset import MushroomDataset
 
 logger = get_logger(__name__)
 
@@ -76,17 +77,13 @@ class Trainer:
         return loss, outputs
 
     def train_epoch(self) -> tuple[float, float]:
-        """Run one epoch of training.
-        
-        Returns:
-            tuple: (epoch_loss, epoch_f1)
-                - epoch_loss: Average loss over the epoch
-                - epoch_f1: Macro F1 score for the epoch (percentage)
-        """
+        """Run one epoch of training."""
         self.model.train()
         total_loss = 0
         correct = 0
         total = 0
+        all_predictions = []
+        all_labels = []
 
         pbar = tqdm(self.train_loader, desc='Training', leave=False)
         for images, labels in pbar:
@@ -97,17 +94,19 @@ class Trainer:
             total += labels.size(0)
             correct += predicted.eq(labels.to(self.device)).sum().item()
             
+            all_predictions.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
+            
             pbar.set_postfix({
                 'loss': f'{total_loss/len(self.train_loader):.4f}',
-                'f1': f'{100.*correct/total:.2f}%'
+                'acc': f'{100.*correct/total:.2f}%'  # using acc during the epoch since F1 needs full epoch
             })
 
         epoch_loss = total_loss / len(self.train_loader)
-        epoch_f1 = f1_score(labels.cpu(), predicted.cpu(), average='macro') * 100
+        epoch_f1 = f1_score(all_labels, all_predictions, average='macro') * 100
         self.metrics['train_losses'].append(epoch_loss)
         self.metrics['train_f1s'].append(epoch_f1)
         
-        logger.info(f"Training - Loss: {epoch_loss:.4f}, F1: {epoch_f1:.2f}%")
         return epoch_loss, epoch_f1
 
     def validate(self) -> tuple[float, float]:
@@ -144,11 +143,7 @@ class Trainer:
         return epoch_loss, val_f1
 
     def plot_metrics(self, model_name: str = 'model') -> None:
-        """Plot and save training and validation metrics.
-        
-        Args:
-            model_name: Name of the model for saving the plot
-        """
+        """Plot and save training and validation metrics."""
         epochs = range(1, len(self.metrics['train_losses']) + 1)
         
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
@@ -161,6 +156,7 @@ class Trainer:
         ax1.set_ylabel('Loss')
         ax1.legend()
         ax1.grid(True)
+        ax1.xaxis.set_major_locator(plt.MaxNLocator(integer=True))  # Force integer ticks
         
         # Accuracy/F1 plot
         ax2.plot(epochs, self.metrics['train_f1s'], 'b-', label='Train F1')
@@ -170,6 +166,7 @@ class Trainer:
         ax2.set_ylabel('Score (%)')
         ax2.legend()
         ax2.grid(True)
+        ax2.xaxis.set_major_locator(plt.MaxNLocator(integer=True))  # Force integer ticks
         
         plt.tight_layout()
         save_path = self.save_dir / f'{model_name}_metrics.png'
@@ -177,22 +174,36 @@ class Trainer:
         plt.close()
         logger.info(f"Metrics plot saved to {save_path}")
 
-    def train(self, num_epochs: int, model_name: str, start_epoch: int = 0) -> float:
+    def train(self, num_epochs: int, model_name: str, save_dir: Path) -> tuple[Path, dict]:
         """Run the complete training loop.
         
         Args:
-            num_epochs: Number of epochs to train for
+            num_epochs: Number of epochs to train for (0 for pipeline testing)
             model_name: Name of the model (used for saving)
-            start_epoch: Epoch to start from (for resuming training)
+            save_dir: Directory to save model and plots
             
         Returns:
-            float: Best validation F1 score achieved
+            tuple: (best_model_path, best_metrics)
         """
+        if num_epochs == 0:
+            logger.info(f"Pipeline test mode: Saving initial model state without training")
+            initial_metrics = {
+                'val_f1': 0,
+                'val_loss': 0,
+                'train_f1': 0,
+                'train_loss': 0,
+                'epoch': 0,
+                'pipeline_test': True
+            }
+            model_path = save_model(self.model, model_name, initial_metrics, save_dir)
+            return model_path, initial_metrics
+            
         best_val_f1 = 0
-        model_path = Config.MODELS_DIR / f"best_{model_name}_model.pth"
+        best_model_path = None
+        best_metrics = None
         
         logger.info(f"Training model {model_name} for {num_epochs} epochs")
-        for epoch in range(start_epoch, num_epochs):
+        for epoch in range(num_epochs):
             logger.info(f"Epoch {epoch+1}/{num_epochs}")
             train_loss, train_f1 = self.train_epoch()
             val_loss, val_f1 = self.validate()
@@ -205,13 +216,62 @@ class Trainer:
             
             if val_f1 > best_val_f1:
                 best_val_f1 = val_f1
-                torch.save(self.model.state_dict(), model_path)
+                best_metrics = {
+                    'val_f1': val_f1,
+                    'val_loss': val_loss,
+                    'train_f1': train_f1,
+                    'train_loss': train_loss,
+                    'epoch': epoch + 1
+                }
+                best_model_path = save_model(self.model, model_name, best_metrics, save_dir)
                 logger.info(f"New best validation F1: {val_f1:.2f}%")
             
-            if Config.SAVE_CHECKPOINTS and (epoch + 1) % Config.CHECKPOINT_FREQ == 0:
-                checkpoint_path = Path(Config.CHECKPOINT_DIR, f'checkpoint_{model_name}_epoch_{epoch+1}.pth')
-                torch.save(self.model.state_dict(), checkpoint_path)
-                logger.info(f"Saved checkpoint to {checkpoint_path}")
-        
         self.plot_metrics(model_name=model_name)
-        return best_val_f1
+        return best_model_path, best_metrics
+    
+
+def setup_training(model: torch.nn.Module, config: dict, train_dataset: MushroomDataset, val_dataset: MushroomDataset) -> Trainer:
+    """Setup training components."""
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=config['batch_size'],
+        shuffle=True,
+        num_workers=4,
+        pin_memory=torch.cuda.is_available()
+    )
+    
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=config['batch_size'],
+        shuffle=False,
+        num_workers=4,
+        pin_memory=torch.cuda.is_available()
+    )
+    
+
+    # TODO: AdamW for now (faster convergence), switch to SGD for fine-tuning
+    optimizer = torch.optim.AdamW(
+        model.parameters(),
+        lr=config['learning_rate'],
+        weight_decay=config['weight_decay']
+    )
+    
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode='min',
+        factor=0.1,
+        patience=5
+    )
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    trainer = Trainer(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        optimizer=optimizer,
+        device=device,
+        scheduler=scheduler
+    )
+    
+    return trainer
