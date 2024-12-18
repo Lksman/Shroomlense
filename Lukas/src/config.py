@@ -32,7 +32,7 @@ class Config:
     # General model parameters
     NUM_CLASSES = None  # Will be set dynamically based on dataset
     BATCH_SIZE = 32 # runs fine on my (lukas) machine. if you run out of memory, reduce this to 16 or 8
-    NUM_EPOCHS = 0 # for testing the pipeline set to 0, set to 20 for full training
+    NUM_EPOCHS = 20 # for testing the pipeline set to 0, set to 20 for full training
     
     # Model configurations
     MODELS_TO_TRAIN = ['cnn', 'vgg19', 'vit']
