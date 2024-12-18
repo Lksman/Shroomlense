@@ -13,6 +13,7 @@ Once we have chosen a baseline model, we will hyperparameter tune it with the di
 ## Training
 
 During the training pipeline, we populate the `data/intermediate` directory and model artifacts in the `models` directory. Once the splits are created, you can disable the creation of new splits by setting `CREATE_STATIC_SPLITS` to `False` in the config. this will use the existing splits in the `data/intermediate` directory. 
+During the training pipeline, we populate the `data/intermediate` directory and model artifacts in the `models` directory. Once the splits are created, you can disable the creation of new splits by setting `CREATE_STATIC_SPLITS` to `False` in the config. this will use the existing splits in the `data/intermediate` directory. 
 The intermediate data entails a static train/val/test split where only the train set is augmented. This is to prevent data leakage during eval and test.
 <!-- We could implement kfold cv if we want a more robust training loop. -->
 
