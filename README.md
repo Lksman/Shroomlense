@@ -20,9 +20,9 @@ The intermediate data entails a static train/val/test split where only the train
 ### Augmentation
 To reduce class imbalance, we augment underrepresented classes using a dynamic scaling approach. For each class i, we calculate the target number of samples after augmentation using:
 
-$$
+```math
 \text{AugmentedCount}_i = \min \begin{cases} \text{MAX\_AUGMENT} \cdot \text{OriginalCount}_i, \\ \max_{j \in \text{classes}}(\text{OriginalCount}_j) \end{cases}
-$$
+```
 
 This approach ensures two key constraints:
 1. The augmented sample count for any class never exceeds the size of the largest original class
