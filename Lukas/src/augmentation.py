@@ -11,12 +11,12 @@ def get_base_transforms():
         transforms.ToTensor(),  # converts to [0,1] range
     ])
 
-def get_training_transforms(mean, std):
+def get_training_transforms():
     """Combined transforms for model training"""
     return transforms.Compose([
         transforms.Resize((Config.IMAGE_SIZE, Config.IMAGE_SIZE)),
         transforms.ToTensor(),  # Converts to [0,1]
-        transforms.Normalize(mean=mean, std=std)  # Normalizes using dataset statistics
+        transforms.Normalize(mean=Config.DATASET_MEAN, std=Config.DATASET_STD)  # Normalizes using dataset statistics
     ])
 
 def get_augmentation_list(aug_rotation:bool=True, aug_color_jitter:bool=True, aug_affine:bool=False):
@@ -28,7 +28,7 @@ def get_augmentation_list(aug_rotation:bool=True, aug_color_jitter:bool=True, au
             transforms.Compose([
                 transforms.RandomHorizontalFlip(p=0.5), # flip horizontally 50% of the time
                 transforms.RandomRotation(30),
-                # Zoom in 15% to alleviate black regions caused by rotation.
+                # Zoom in 15% to remove black regions caused by rotation.
                 # The largest inscribed square after a 30-degree rotation has a side length ~cos(30) ≈ 0.866 of the original.
                 # We use 0.85 (slightly less) to ensure all black borders are cropped.
                 transforms.CenterCrop(int(Config.IMAGE_SIZE * 0.85)),  

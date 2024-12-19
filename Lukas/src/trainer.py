@@ -7,10 +7,12 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import torch.nn as nn
 from sklearn.metrics import f1_score
+import seaborn as sns
 
 from src.utils import get_logger, save_model
 from src.config import Config
 from src.dataset import MushroomDataset
+from src.eval import top_k_accuracy
 
 logger = get_logger(__name__)
 
@@ -49,8 +51,6 @@ class Trainer:
             'val_f1s': []
         }
         
-        self.save_dir = Config.PLOTS_DIR
-        self.save_dir.mkdir(exist_ok=True)
         logger.info(f"Training on device: {device}")
 
     def _step(self, images: Tensor, labels: Tensor) -> tuple[Tensor, Tensor]:
@@ -109,7 +109,7 @@ class Trainer:
         
         return epoch_loss, epoch_f1
 
-    def validate(self) -> tuple[float, float]:
+    def validate(self) -> tuple[float, float, float, float]:
         """Run validation on the validation set.
         
         Returns:
@@ -139,38 +139,35 @@ class Trainer:
         
         self.metrics['val_losses'].append(epoch_loss)
         self.metrics['val_f1s'].append(val_f1)
-        
         return epoch_loss, val_f1
 
-    def plot_metrics(self, model_name: str = 'model') -> None:
+    def plot_metrics(self, model_name: str = 'model', save_dir: Path = None) -> None:
         """Plot and save training and validation metrics."""
-        epochs = range(1, len(self.metrics['train_losses']) + 1)
+        sns.set_style("whitegrid")
+        sns.set_palette("deep")
         
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+        epochs = range(1, len(self.metrics['train_losses']) + 1)
+        fig, (ax1, ax2) = plt.subplots(1, 4, figsize=(20, 5))
         
         # Loss plot
-        ax1.plot(epochs, self.metrics['train_losses'], 'b-', label='Training')
-        ax1.plot(epochs, self.metrics['val_losses'], 'r-', label='Validation')
-        ax1.set_title('Loss')
+        sns.lineplot(x=epochs, y=self.metrics['train_losses'], label='Training', ax=ax1)
+        sns.lineplot(x=epochs, y=self.metrics['val_losses'], label='Validation', ax=ax1)
+        ax1.set_title('Loss', pad=10)
         ax1.set_xlabel('Epoch')
         ax1.set_ylabel('Loss')
-        ax1.legend()
-        ax1.grid(True)
-        ax1.xaxis.set_major_locator(plt.MaxNLocator(integer=True))  # Force integer ticks
+        ax1.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
         
-        # Accuracy/F1 plot
-        ax2.plot(epochs, self.metrics['train_f1s'], 'b-', label='Train F1')
-        ax2.plot(epochs, self.metrics['val_f1s'], 'r-', label='Val F1')
-        ax2.set_title('Metrics')
+        # F1 Score plot
+        sns.lineplot(x=epochs, y=self.metrics['train_f1s'], label='Train F1', ax=ax2)
+        sns.lineplot(x=epochs, y=self.metrics['val_f1s'], label='Val F1', ax=ax2)
+        ax2.set_title('F1 Score', pad=10)
         ax2.set_xlabel('Epoch')
         ax2.set_ylabel('Score (%)')
-        ax2.legend()
-        ax2.grid(True)
-        ax2.xaxis.set_major_locator(plt.MaxNLocator(integer=True))  # Force integer ticks
+        ax2.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
         
         plt.tight_layout()
-        save_path = self.save_dir / f'{model_name}_metrics.png'
-        fig.savefig(save_path)
+        save_path = save_dir / f'{model_name}_metrics.png'
+        fig.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.close()
         logger.info(f"Metrics plot saved to {save_path}")
 
@@ -185,7 +182,7 @@ class Trainer:
         Returns:
             tuple: (best_model_path, best_metrics)
         """
-        if num_epochs == 0:
+        if Config.PIPELINE_TESTING_MODE:
             logger.info(f"Pipeline test mode: Saving initial model state without training")
             initial_metrics = {
                 'val_f1': 0,
@@ -225,8 +222,10 @@ class Trainer:
                 }
                 best_model_path = save_model(self.model, model_name, best_metrics, save_dir)
                 logger.info(f"New best validation F1: {val_f1:.2f}%")
+        
+        if Config.PLOT_METRICS:
+            self.plot_metrics(model_name=model_name, save_dir=save_dir)
             
-        self.plot_metrics(model_name=model_name)
         return best_model_path, best_metrics
     
 
@@ -255,6 +254,13 @@ def setup_training(model: torch.nn.Module, config: dict, train_dataset: Mushroom
         lr=config['learning_rate'],
         weight_decay=config['weight_decay']
     )
+
+    # optimizer = torch.optim.SGD(
+    #     model.parameters(),
+    #     lr=config['learning_rate'],
+    #     weight_decay=config['weight_decay']
+    # )
+
     
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,

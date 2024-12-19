@@ -1,5 +1,15 @@
 # Advanced Information Retrieval Project @ TU Graz, WS24
 
+## Table of Contents
+- [Architecture](#architecture)
+- [Config](#config)
+- [Training](#training)
+  - [Augmentation](#augmentation)
+  - [Running the Pipeline](#running-the-pipeline)
+  - [Model Artifacts](#model-artifacts)
+- [API](#api)
+- [AI Usage Disclaimer](#ai-usage-disclaimer)
+
 ## Architecture
 
 ![Architecture](Lukas/plots/AIR_G7_Architecture_vertical.png)
@@ -12,10 +22,9 @@ Once we have chosen a baseline model, we will hyperparameter tune it with the di
 
 ## Training
 
-During the training pipeline, we populate the `data/intermediate` directory and model artifacts in the `models` directory. Once the splits are created, you can disable the creation of new splits by setting `CREATE_STATIC_SPLITS` to `False` in the config. this will use the existing splits in the `data/intermediate` directory. 
-During the training pipeline, we populate the `data/intermediate` directory and model artifacts in the `models` directory. Once the splits are created, you can disable the creation of new splits by setting `CREATE_STATIC_SPLITS` to `False` in the config. this will use the existing splits in the `data/intermediate` directory. 
-The intermediate data entails a static train/val/test split where only the train set is augmented. This is to prevent data leakage during eval and test.
-<!-- We could implement kfold cv if we want a more robust training loop. -->
+During the training pipeline, we populate the `data/intermediate` directory and model artifacts in the `models` directory. Once the splits are created, you can disable the creation of new splits by setting `CREATE_STATIC_SPLITS` to `False` in the config. This will use the existing splits in the `data/intermediate` directory.
+
+The intermediate data entails a static train/val/test split where only the train set is augmented. This is to prevent data leakage during evaluation and testing.
 
 ### Augmentation
 To reduce class imbalance, we augment underrepresented classes using a dynamic scaling approach. For each class i, we calculate the target number of samples after augmentation using:
@@ -30,35 +39,49 @@ This approach ensures two key constraints:
 
 This helps prevent over-augmentation while flattening the class distribution, as shown in the plots below:
 
-![Class distribution](Lukas/plots/pre_augmentation_class_distribution.png)
+![Class distribution before augmentation](Lukas/plots/pre_augmentation_class_distribution.png)
+![Class distribution after augmentation](Lukas/plots/post_augmentation_class_distribution.png)
 
-![Class distribution](Lukas/plots/post_augmentation_class_distribution.png)
-
-### Running the pipeline
-The ipynb is outdated, the pipeline is now run from the command line.
+### Running the Pipeline
+The training pipeline can be run from the command line:
 
 ```bash
 python Lukas/run_train_pipeline.py
 ```
 
-### Model artifacts
+Note: The Jupyter notebook version is outdated and should not be used.
 
-during training, the model weights are saved in the `models` directory, the confusion matrices are saved in the `plots/confusion_matrices` directory and the evaluation results are saved in the `plots/evaluations` directory.
+### Model Artifacts
 
+During training, all model artifacts are saved in the `models` directory with the following structure:
 ```
 models/
 └── datetime_timestamp/
     ├── cnn/
-    │   └── best_model.pth
+    │   ├── best_model.pth
+    │   ├── metrics.json
+    │   └── metrics.png
     ├── vgg19/
-    │   └── best_model.pth
+    │   ├── best_model.pth
+    │   ├── metrics.json
+    │   └── metrics.png
     └── vit/
-        └── best_model.pth
-
-plots/
-├── confusion_matrices/
-│   └── confusion_matrix_model_timestamp.png
-└── evaluations/
-    └── evaluation_results_timestamp.json
+        ├── best_model.pth
+        ├── metrics.json
+        └── metrics.png
 ```
+
+For inference, we select the best model from these runs and move it to the `models/final_models` directory, from where we then load the model type and weights.
+
+## API
+The Flask API can be started by running:
+```bash
+python Lukas/run_flask.py
+```
+
+By default, the API is accessible at `http://localhost:5000`. The host address and port can be configured in the config file.
+For the scope of this project, we use the Flask development server, which is not recommended for production.
+
+## AI Usage Disclaimer
+The docstrings throughout the project were mostly AI generated but were manually validated.
 

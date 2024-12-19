@@ -9,8 +9,7 @@
 
 __pycache__/
 
-# for now keep only the .gitkeep file in the models directory:
-!**/models/.gitkeep
+# Models directory handling
 **/models/*
 
 

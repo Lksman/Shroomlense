@@ -362,8 +362,8 @@ def load_prepared_datasets(train_dir: Path, val_dir: Path, test_dir: Path) -> tu
     else:
         logger.info("Using pre-calculated dataset statistics from config")
         
-    train_dataset = MushroomDataset(train_dir, transform=get_training_transforms(Config.DATASET_MEAN, Config.DATASET_STD))
-    val_dataset = MushroomDataset(val_dir, transform=get_training_transforms(Config.DATASET_MEAN, Config.DATASET_STD))
-    test_dataset = MushroomDataset(test_dir, transform=get_training_transforms(Config.DATASET_MEAN, Config.DATASET_STD))
+    train_dataset = MushroomDataset(train_dir, transform=get_training_transforms())
+    val_dataset = MushroomDataset(val_dir, transform=get_training_transforms())
+    test_dataset = MushroomDataset(test_dir, transform=get_training_transforms())
     
     return train_dataset, val_dataset, test_dataset

@@ -5,6 +5,7 @@ import torch
 from datetime import datetime
 import seaborn as sns
 import matplotlib.pyplot as plt
+import json
 
 from src.config import Config
 ####################################################################################
@@ -119,30 +120,18 @@ def get_logger(name: str) -> CustomLogger:
     return CustomLogger(name)
 
 def save_model(model: torch.nn.Module, model_name: str, metrics: dict, save_dir: Path) -> Path:
-    """Save model weights and metadata.
+    """Save model state dict."""
+    save_dir.mkdir(parents=True, exist_ok=True)
     
-    Args:
-        model: The model to save
-        model_name: Name of the model architecture
-        metrics: Dictionary containing evaluation metrics
-        save_dir: Directory to save the model
-        
-    Returns:
-        Path to the saved weights file
-    """
-    # Create model directory structure
-    model_dir = save_dir / model_name
-    model_dir.mkdir(parents=True, exist_ok=True)
+    # Save only the model state dict (weights), this prevents us from unsafe loading of the model.
+    model_path = save_dir / 'best_model.pth'
+    torch.save(model.state_dict(), model_path)
     
-    # Save model weights
-    weights_path = model_dir / 'best_model.pth'
-    torch.save({
-        'model_state_dict': model.state_dict(),
-        'metrics': metrics,
-        'architecture': model_name,
-        'timestamp': datetime.now().isoformat()
-    }, weights_path)
-    return weights_path
+    metrics_path = save_dir / 'metrics.json'
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics, f, indent=4)
+    
+    return model_path
 
 def plot_class_distribution(data: dict, title: str, xlabel: str, ylabel: str, save_path: Path) -> None:
     """Plot a bar chart of class distribution using seaborn."""

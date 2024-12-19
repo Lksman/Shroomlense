@@ -1,8 +1,11 @@
+import random
+import json
+from pathlib import Path
+from datetime import datetime
+
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from pathlib import Path
-import json
-from datetime import datetime
 
 from src.config import Config
 from src.dataset import create_static_splits, load_prepared_datasets
@@ -18,8 +21,9 @@ def main():
     results_dir = Path(Config.MODELS_DIR, timestamp)
     results_dir.mkdir(parents=True, exist_ok=True)
     
-    # # Create static splits first
-    # splits_dir = Config.INTERMEDIATE_DATA_DIR / 'splits'
+    torch.manual_seed(Config.SEED)
+    np.random.seed(Config.SEED)
+    random.seed(Config.SEED)
     
     if Config.CREATE_STATIC_SPLITS:
         logger.info("Creating static splits...")
@@ -60,14 +64,18 @@ def main():
         
         # Train model and get best weights path and metrics
         best_model_path, train_metrics = trainer.train(
-            num_epochs=Config.NUM_EPOCHS,
+            num_epochs=Config.NUM_EPOCHS[model_name],
             model_name=model_name,
             save_dir=model_dir
         )
         
         # Load best model weights for evaluation
-        checkpoint = torch.load(best_model_path, weights_only=True)
-        model.load_state_dict(checkpoint['model_state_dict'])
+        model.load_state_dict(torch.load(
+            best_model_path,
+            map_location=trainer.device,
+            weights_only=True
+        ))
+        model.eval()
         
         # Setup test loader
         test_loader = DataLoader(
@@ -79,8 +87,8 @@ def main():
         )
         
         # Evaluate model
-        logger.info(f"Evaluating {model_name} model")
-        metrics = evaluate_model(model, test_loader, model_name, plot_confusion_matrix=True)
+        logger.info(f"Evaluating {model_name} model on test set")
+        metrics = evaluate_model(model, test_loader, model_name, plot_confusion_matrix=Config.PLOT_CONFUSION_MATRIX)
         all_results[model_name] = metrics
         
         # Log results
@@ -98,13 +106,6 @@ def main():
     
     with open(eval_path / f'evaluation_results_{timestamp}.json', 'w') as f:
         json.dump(all_results, f, indent=4)
-    
-    # Print final comparison
-    logger.info("\nFinal Model Comparison:")
-    for model_name, metrics in all_results.items():
-        logger.info(f"\n{model_name.upper()}:")
-        for metric, value in metrics.items():
-            logger.info(f"{metric}: {value:.4f}")
 
 if __name__ == "__main__":
     main()
