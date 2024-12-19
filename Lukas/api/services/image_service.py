@@ -9,18 +9,14 @@ from typing import Tuple, Dict
 from src.config import Config
 from src.utils import get_logger
 from src.dataset import MushroomDataset
+from src.augmentation import get_training_transforms
 
 logger = get_logger(__name__)
 
 class ImageService:
     def __init__(self):
         """Initialize the image service with transforms and dataset mappings."""
-        self.transform = transforms.Compose([
-            transforms.Resize((Config.IMAGE_SIZE, Config.IMAGE_SIZE)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=Config.DATASET_MEAN, std=Config.DATASET_STD)
-        ])
-        
+        self.transform = get_training_transforms()
         self.dataset = MushroomDataset(Config.DATA_DIR, skip_transform=True)
         self.class_to_idx = self.dataset.class_to_idx
         self.idx_to_class = {i: cls_name for cls_name, i in self.class_to_idx.items()}
