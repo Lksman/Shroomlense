@@ -1,5 +1,4 @@
 from pathlib import Path
-import torch
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
@@ -21,11 +20,6 @@ class Config:
 
     # Dataset settings
     MAX_AUGMENTATION_FACTOR_PER_IMAGE = 5
-    AUGMENTATION_STEPS = {
-        "rotation": True,
-        "color_jitter": True,
-        "affine": False
-    }
     CREATE_STATIC_SPLITS = False # set to true to (re)create static splits, false = use existing ones in the intermediate data directory
 
 
@@ -57,11 +51,12 @@ class Config:
     
     # Image parameters
     IMAGE_SIZE = 224  # input size of vgg19    
-    # IMAGENET_MEAN = [0.485, 0.456, 0.406]  # ImageNet normalization
-    # IMAGENET_STD = [0.229, 0.224, 0.225]
     CALCULATE_DATASET_MEAN_STD = False # set to true if we change the dataset, the current mean and std are calculated from the unaugmented mushroom_50k_v1 dataset
     DATASET_MEAN = [-0.2131882607936859, -0.16706067323684692, -0.3030257225036621]
     DATASET_STD = [1.0976533889770508, 1.052354335784912, 1.0617069005966187]
+    # IMAGENET_MEAN = [0.485, 0.456, 0.406]  # ImageNet normalization
+    # IMAGENET_STD = [0.229, 0.224, 0.225]
+
 
     # Logging settings
     LOG_LEVEL = "DEBUG"

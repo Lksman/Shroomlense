@@ -30,16 +30,9 @@ This approach ensures two key constraints:
 
 This helps prevent over-augmentation while flattening the class distribution, as shown in the plots below:
 
-<div style="display: flex; justify-content: space-between;">
-    <div>
-        <p>Before augmentation:</p>
-        <img src="Lukas/plots/pre_augmentation_class_distribution.png" width="400"/>
-    </div>
-    <div>
-        <p>After augmentation:</p>
-        <img src="Lukas/plots/post_augmentation_class_distribution.png" width="400"/>
-    </div>
-</div>
+![Class distribution](Lukas/plots/pre_augmentation_class_distribution.png)
+
+![Class distribution](Lukas/plots/post_augmentation_class_distribution.png)
 
 ### Running the pipeline
 The ipynb is outdated, the pipeline is now run from the command line.
