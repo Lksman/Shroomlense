@@ -3,7 +3,7 @@ from flask_restx import Api
 
 from src.utils import get_logger, Config
 from api.external import external_ns
-from api.inference import inference_ns
+from api.internal import internal_ns
 
 logger = get_logger(__name__)
 
@@ -21,7 +21,7 @@ def create_app():
     )
 
     api.add_namespace(external_ns)
-    api.add_namespace(inference_ns)
+    api.add_namespace(internal_ns)
     return app
 
 if __name__ == "__main__":

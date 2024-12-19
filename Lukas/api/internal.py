@@ -9,12 +9,12 @@ from api.services.image_service import ImageService
 
 logger = get_logger(__name__)
 
-inference_ns = Namespace("inference", description="Inference operations")
+internal_ns = Namespace("internal", description="Internal operations")
 image_service = ImageService()
 model_service = ModelService(image_service)
 
-@inference_ns.route("/predict")
-@inference_ns.expect(inference_ns.parser().add_argument('image', location='files', type=FileStorage, required=True))
+@internal_ns.route("/predict")
+@internal_ns.expect(internal_ns.parser().add_argument('image', location='files', type=FileStorage, required=True))
 class Predict(Resource):
     def post(self):
         if 'image' not in request.files:
@@ -40,13 +40,11 @@ class Predict(Resource):
             logger.error(f"Unexpected error during inference: {e}")
             return {'error': 'Internal server error'}, 500
 
-@inference_ns.route("/random_image/<string:class_name>")
+@internal_ns.route("/random_image/<string:mushroom_name>")
 class RandomImage(Resource):
-    def get(self, class_name):
+    def get(self, mushroom_name):
         try:
-            image, image_path = image_service.get_random_image_by_class(class_name)
-            
-            # Convert PIL image to bytes
+            image, image_path = image_service.get_random_image_by_class(mushroom_name)
             img_io = io.BytesIO()
             image.save(img_io, 'JPEG')
             img_io.seek(0)
@@ -55,7 +53,7 @@ class RandomImage(Resource):
                 img_io,
                 mimetype='image/jpeg',
                 as_attachment=True,
-                download_name=f"{class_name}_random.jpg"
+                download_name=f"{mushroom_name}_random.jpg"
             )
             
         except ValueError as e:
