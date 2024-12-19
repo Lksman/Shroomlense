@@ -22,7 +22,6 @@ def create_app():
 
     api.add_namespace(external_ns)
     api.add_namespace(inference_ns)
-
     return app
 
 if __name__ == "__main__":

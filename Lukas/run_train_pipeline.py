@@ -18,22 +18,22 @@ def main():
     results_dir = Path(Config.MODELS_DIR, timestamp)
     results_dir.mkdir(parents=True, exist_ok=True)
     
-    # Create static splits first
-    splits_dir = Config.INTERMEDIATE_DATA_DIR / 'splits'
+    # # Create static splits first
+    # splits_dir = Config.INTERMEDIATE_DATA_DIR / 'splits'
     
     if Config.CREATE_STATIC_SPLITS:
         logger.info("Creating static splits...")
         train_dir, val_dir, test_dir = create_static_splits(
             data_dir=Config.DATA_DIR,
-            output_dir=splits_dir,
+            output_dir=Config.INTERMEDIATE_DATA_DIR,
             train_val_split=0.2,
             val_test_split=0.5
         )
     else:
         logger.info("Using existing static splits...")
-        train_dir = splits_dir / 'train'
-        val_dir = splits_dir / 'val'
-        test_dir = splits_dir / 'test'
+        train_dir = Config.INTERMEDIATE_DATA_DIR / 'train'
+        val_dir = Config.INTERMEDIATE_DATA_DIR / 'val'
+        test_dir = Config.INTERMEDIATE_DATA_DIR / 'test'
 
         if not train_dir.exists() or not val_dir.exists() or not test_dir.exists():
             raise ValueError("Static splits directory does not exist or is incomplete. Please set CREATE_STATIC_SPLITS to True to create them.")
@@ -80,7 +80,7 @@ def main():
         
         # Evaluate model
         logger.info(f"Evaluating {model_name} model")
-        metrics = evaluate_model(model, test_loader, model_name, results_dir, plot_confusion_matrix=True)
+        metrics = evaluate_model(model, test_loader, model_name, plot_confusion_matrix=True)
         all_results[model_name] = metrics
         
         # Log results

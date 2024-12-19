@@ -151,8 +151,8 @@ def plot_class_distribution(data: dict, title: str, xlabel: str, ylabel: str, sa
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.xticks(rotation=45)  # Rotate x-labels for better readability if needed
-    plt.tight_layout()  # Adjust layout to prevent label cutoff
+    plt.xticks(rotation=45)
+    plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
 

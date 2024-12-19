@@ -91,7 +91,7 @@ def save_confusion_matrix(outputs: torch.Tensor, targets: torch.Tensor,
     logger.info(f"Saved confusion matrix to {save_dir}/confusion_matrix_{model_name}_{timestamp}.png")
 
 
-def evaluate_model(model: torch.nn.Module, test_loader: DataLoader, model_name: str, results_dir: Path, plot_confusion_matrix: bool = True):
+def evaluate_model(model: torch.nn.Module, test_loader: DataLoader, model_name: str, plot_confusion_matrix: bool = True):
     """Evaluate model and save results."""
     model.eval()
     device = next(model.parameters()).device
