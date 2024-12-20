@@ -147,7 +147,7 @@ class Trainer:
         sns.set_palette("deep")
         
         epochs = range(1, len(self.metrics['train_losses']) + 1)
-        fig, (ax1, ax2) = plt.subplots(1, 4, figsize=(20, 5))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
         
         # Loss plot
         sns.lineplot(x=epochs, y=self.metrics['train_losses'], label='Training', ax=ax1)
