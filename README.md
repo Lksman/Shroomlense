@@ -87,6 +87,9 @@ Even with the baseline ViT model trained for 2 epochs, we can achieve a very sol
     "train_loss": 0.4314231148026336
 }
 ```
+For our use-case, top-5 accuracy is the most relevant metric, as we display the top-5 predictions to the user who then makes the final decision.
+
+
 Very few classes (species) have slightly higher misclassification rates, most likely due to visual similarity:
 
 ![Confusion Matrix](backend/plots/confusion_matrix_vit.png)
