@@ -7,6 +7,7 @@
   - [Augmentation](#augmentation)
   - [Running the Pipeline](#running-the-pipeline)
   - [Model Artifacts](#model-artifacts)
+  - [Evaluation (ViT only)](#evaluation-vit-only)
 - [API](#api)
 - [AI Usage Disclaimer](#ai-usage-disclaimer)
 
