@@ -46,8 +46,8 @@ class Config:
     
     # Model configurations
     MODELS_TO_TRAIN = [
-        'cnn', 
-        'vgg19', 
+        # 'cnn', 
+        # 'vgg19', 
         'vit'
     ]
     MODEL_CONFIGS = {
@@ -78,7 +78,7 @@ class Config:
     LOG_DIR = PROJECT_ROOT / "logs"
     
     # API settings
-    API_TITLE = "Mushroom API"
+    API_TITLE = "Shroomlense API"
     API_VERSION = "0.2"
     API_DESCRIPTION = "API for mushroom species classification"
     HOST = "localhost"

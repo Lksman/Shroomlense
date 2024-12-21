@@ -52,7 +52,7 @@ class RandomImage(Resource):
             return send_file(
                 img_io,
                 mimetype='image/jpeg',
-                as_attachment=True,
+                as_attachment=False,
                 download_name=f"{mushroom_name}_random.jpg"
             )
             
