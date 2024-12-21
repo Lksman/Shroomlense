@@ -73,6 +73,26 @@ models/
 
 For inference, we select the best model from these runs and move it to the `models/final_models` directory, from where we then load the model type and weights.
 
+
+
+### Evaluation (ViT only)
+Even with the baseline ViT model trained for 2 epochs, we can achieve a very solid performance across all relevant metrics:
+```js
+{
+    "val_f1": 82.82044466135217,
+    "val_loss": 0.4800497365387034,
+    "val_top3": 100.0,
+    "val_top5": 100.0,
+    "train_f1": 86.72970789630963,
+    "train_loss": 0.4314231148026336
+}
+```
+Very few classes (species) have slightly higher misclassification rates, most likely due to visual similarity:
+
+![Confusion Matrix](backend/plots/confusion_matrix_vit.png)
+
+
+
 ## API
 The Flask API can be started by running:
 ```bash
