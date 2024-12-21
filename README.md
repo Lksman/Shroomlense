@@ -12,11 +12,11 @@
 
 ## Architecture
 
-![Architecture](Lukas/plots/AIR_G7_Architecture_vertical.png)
+![Architecture](backend/plots/AIR_G7_Architecture_vertical.png)
 
 ## Config
 
-The config is located in `Lukas/src/config.py` and is used to set all kinds of parameters for the entire project (e.g. logging, paths, training parameters, api settings, etc.)
+The config is located in `backend/src/config.py` and is used to set all kinds of parameters for the entire project (e.g. logging, paths, training parameters, api settings, etc.)
 Make sure to check it out before running the pipeline. Important parameters should be annotated.
 Once we have chosen a baseline model, we will hyperparameter tune it with the dicts specified in the config. (TODO: move the dicts to separate files for each model)
 
@@ -39,14 +39,14 @@ This approach ensures two key constraints:
 
 This helps prevent over-augmentation while flattening the class distribution, as shown in the plots below:
 
-![Class distribution before augmentation](Lukas/plots/pre_augmentation_class_distribution.png)
-![Class distribution after augmentation](Lukas/plots/post_augmentation_class_distribution.png)
+![Class distribution before augmentation](backend/plots/pre_augmentation_class_distribution.png)
+![Class distribution after augmentation](backend/plots/post_augmentation_class_distribution.png)
 
 ### Running the Pipeline
 The training pipeline can be run from the command line:
 
 ```bash
-python Lukas/run_train_pipeline.py
+python backend/run_train_pipeline.py
 ```
 
 Note: The Jupyter notebook version is outdated and should not be used.
@@ -76,7 +76,7 @@ For inference, we select the best model from these runs and move it to the `mode
 ## API
 The Flask API can be started by running:
 ```bash
-python Lukas/run_flask.py
+python backend/run_flask.py
 ```
 
 By default, the API is accessible at `http://localhost:5000`. The host address and port can be configured in the config file.
