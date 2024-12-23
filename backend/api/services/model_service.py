@@ -3,11 +3,13 @@ import torch
 from src.config import Config
 from src.utils import get_logger
 from src.models import create_model
+from api.services.image_service import ImageService
+
 
 logger = get_logger(__name__)
 
 class ModelService:
-    def __init__(self, image_service):
+    def __init__(self, image_service: ImageService):
         self.model = create_model(model_name=Config.INFERENCE_MODEL_NAME, num_classes=43)[0]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
@@ -52,7 +54,20 @@ class ModelService:
                     }
                     for class_id, conf in zip(predicted_classes[0], confidences[0])
                 ]
-                
+
+
+                # handle uncertainty (e.g. displaying a warning in the frontend)
+                low_top_k_confidence = sum([pred['confidence'] for pred in predictions]) < Config.CUMULATIVE_CONFIDENCE_WARNING_THRESHOLD
+                low_top_1_confidence = predictions[0]['confidence'] < Config.TOP_1_CONFIDENCE_WARNING_THRESHOLD
+
+                if low_top_k_confidence or low_top_1_confidence:
+                    logger.warning(f"Low confidence in top {top_k} predictions: {predictions}")
+                    # return predictions and include a warning that the mushroom might not be supported yet (i.e. not in the training data)
+                    return {
+                        'predictions': predictions,
+                        'warning': 'Low confidence in predictions, mushroom might not be supported yet.'
+                    }
+
                 return {
                     'predictions': predictions
                 }
@@ -60,3 +75,13 @@ class ModelService:
         except Exception as e:
             logger.error(f"Error during model inference: {e}")
             raise RuntimeError("Model inference failed")
+        
+
+    def get_supported_mushrooms(self) -> list[str]:
+        """
+        Get list of supported mushrooms
+        
+        Returns:
+            list: List of mushroom names
+        """
+        return list(self.idx_to_class.values())

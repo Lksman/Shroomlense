@@ -1,9 +1,7 @@
 from PIL import Image
-import numpy as np
 import io
 import torch
 import random
-from torchvision import transforms
 from typing import Tuple, Dict
 
 from src.config import Config

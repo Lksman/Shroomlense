@@ -61,3 +61,13 @@ class RandomImage(Resource):
         except Exception as e:
             logger.error(f"Error getting random image: {e}")
             return {'error': 'Internal server error'}, 500
+
+
+@internal_ns.route("/supported_mushrooms")
+class SupportedMushrooms(Resource):
+    def get(self):
+        try:
+            return model_service.get_supported_mushrooms(), 200
+        except Exception as e:
+            logger.error(f"Error getting supported mushrooms: {e}")
+            return {'error': 'Internal server error'}, 500
