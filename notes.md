@@ -2,7 +2,7 @@
 
 #### Automatic Mushroom Species Classification Model for Foodborne Disease Prevention Based on Vision Transformer
 - [Journal](https://www.researchgate.net/publication/362770084_Automatic_Mushroom_Species_Classification_Model_for_Foodborne_Disease_Prevention_Based_on_Vision_Transformer)
-- [Local PDF](./papers/Automatic_Mushroom_Species_Classification_Model_fo.pdf)
+<!-- - [Local PDF](./papers/Automatic_Mushroom_Species_Classification_Model_fo.pdf) -->
 - Criticism: Overestimation of Performance:
     - Data based Flaws:
         - This paper aims to classify images of 12 different species of mushrooms and gets reasonably good results. Chosen mushroom species are visually distinct, which makes the classification task easier. The authors should have included more visually similar species to test the model's robustness and generalization capabilities.
@@ -10,7 +10,7 @@
 
 #### Machine Learning and Image Processing-Based System for Identifying Mushrooms Species in Malaysia
 - [Journal](https://www.mdpi.com/2076-3417/14/15/6794)
-- [Local PDF](./papers/applsci-14-06794.pdf)
+<!-- - [Local PDF](./papers/applsci-14-06794.pdf) -->
 - Criticism: Good Results but contains Flaws:
     - Methodological Flaws: 
         - uniformly chosen hyperparameters
@@ -23,7 +23,7 @@
 
 #### Mushroom Classification using CNN and Gradient Boosting Models
 - [Journal](https://ieeexplore.ieee.org/abstract/document/10689875)
-- [Local PDF](./papers/Mushroom_Classification_Using_CNN_and_Gradient_Boosting_Models.pdf)
+<!-- - [Local PDF](./papers/Mushroom_Classification_Using_CNN_and_Gradient_Boosting_Models.pdf) -->
 - Criticism: Overstates the Applicability of CNNs and GBMs for (mushroom) classification:
     - Overstatement:
         - "Thus, the feature proves the effectiveness of CNNs
@@ -34,7 +34,7 @@
 
 #### Deep Learning-Based Classification of Macrofungi: Comparative Analysis of Advanced Models for Accurate Fungi Identification
 - [Journal](https://www.mdpi.com/1424-8220/24/22/7189)
-- [Local PDF](./papers/sensors-24-07189.pdf)
+<!-- - [Local PDF](./papers/sensors-24-07189.pdf) -->
 - Investigate: Their findings indicate Transformers to be less effective than Dense CNNs for mushroom classification. Maybe DCNNs perform better when the dataset is comprised of fewer classes, as is the case in this study (only 6 classes)?
 
 
@@ -51,7 +51,7 @@
 
 ## Experimentss and Results
 <!-- conducted experiments, findings -->
-Initially, three different models were trained/finetuned on the augmented training dataset. 
+Initially, three different models were trained/finetuned on the augmented training dataset. ...
 
 
 
