@@ -76,7 +76,7 @@ if uploaded_file:
 
     with center:
         st.markdown(f"<strong style='padding-left: 5rem; font-size: 28px;'>📝 Details</strong>", unsafe_allow_html=True)
-        info_name = top_mushroom_name.replace('_', ' ')
+        info_name = top_mushroom_name.replace("_", " ")
         st.markdown(f"<span style=padding-left:5rem;font-size:25px>{info_name}</span>", unsafe_allow_html=True)
         st.markdown(
             f"<span style=padding-left:5rem;font-size:20px>Confidence: {top_prediction['confidence']:.2%}</span>",
@@ -87,10 +87,10 @@ if uploaded_file:
     with right:
         st.markdown("### \U0001F50E Other Matches")
         for prediction in other_predictions[1:5]:
-            mushroom_image = fetch_mushroom_image(prediction['class_name'])
+            mushroom_image = fetch_mushroom_image(prediction["class_name"])
             st.image(
                 mushroom_image,
                 caption=f"{prediction['class_name'].replace('_', ' ')} ({prediction['confidence']:.2%})",
                 width=220,
             )
-            show_details(prediction['class_name'])
+            show_details(prediction["class_name"])
