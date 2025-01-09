@@ -12,7 +12,6 @@ import seaborn as sns
 from src.utils import get_logger, save_model
 from src.config import Config
 from src.dataset import MushroomDataset
-from src.eval import top_k_accuracy
 
 logger = get_logger(__name__)
 
@@ -247,19 +246,11 @@ def setup_training(model: torch.nn.Module, config: dict, train_dataset: Mushroom
         pin_memory=torch.cuda.is_available()
     )
     
-
-    # TODO: AdamW for now (faster convergence), switch to SGD for fine-tuning
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=config['learning_rate'],
         weight_decay=config['weight_decay']
     )
-
-    # optimizer = torch.optim.SGD(
-    #     model.parameters(),
-    #     lr=config['learning_rate'],
-    #     weight_decay=config['weight_decay']
-    # )
 
     
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
