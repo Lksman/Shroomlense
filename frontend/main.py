@@ -5,28 +5,24 @@ API_BASE_URL = "http://localhost:5000"
 
 st.set_page_config(page_title="Shroomlense", layout="wide", initial_sidebar_state="collapsed")
 
-
-def fetch_mushroom_image(mushroom_name: str):
+def fetch_mushroom_image(mushroom_name: str) -> bytes:
     image_url = f"{API_BASE_URL}/internal/random_image/{mushroom_name}"
     image = requests.get(image_url).content
 
     return image
 
-
 @st.fragment
-def update_top_prediction_mushroom():
-    top_mushroom_image = fetch_mushroom_image(top_mushroom_name)
+def reload_image(mushroom_name: str) -> None:
+    mushroom_img = fetch_mushroom_image(mushroom_name)
     st.image(
-        top_mushroom_image,
-        caption=f"{top_mushroom_name.replace('_', ' ')} ({top_prediction['confidence']:.2%})",
+        mushroom_img,
+        caption=f"{mushroom_name.replace('_', ' ')} ({top_prediction['confidence']:.2%})",
         use_container_width=True,
     )
-
     st.button("🔄 Reload Image")
-
-
+    
 @st.dialog("Summary")
-def details(mushroom_name, image):
+def details(mushroom_name: str, image: bytes) -> None:
     left_side, right_side = st.columns([1, 1])
 
     with left_side:
@@ -41,7 +37,7 @@ def details(mushroom_name, image):
 
 
 @st.dialog("Taxonomy")
-def taxonomy(mushroom_name):
+def taxonomy(mushroom_name: str) -> None:
     st.html(f"<span style='font-size: 25px;'>{mushroom_name.replace('_', ' ')}</span>")
     taxonomy_url = f"{API_BASE_URL}/external/wikipedia/{mushroom_name}/table"
     taxonomy_text = requests.get(taxonomy_url).json()
@@ -55,7 +51,7 @@ def taxonomy(mushroom_name):
 
 
 @st.fragment
-def show_details(mushroom_name, image):
+def show_details(mushroom_name: str, image: bytes) -> None:
     left_col, right_col = st.columns(2)
 
     with left_col:
@@ -110,7 +106,9 @@ if uploaded_file:
 
     with left:
         st.html(f"<strong style='font-size: 28px;'>🎯 Top Match</strong>")
-        update_top_prediction_mushroom()
+        st.markdown('<div class="main-image">', unsafe_allow_html=True)
+        reload_image(top_mushroom_name)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with center:
         st.html(f"<strong style='font-size: 28px;'>📝 Details</strong>")
@@ -119,10 +117,10 @@ if uploaded_file:
         st.html(f"<span class='headline'>{info_name}</span>")
         st.html(f"<span style='font-size: 20px'>Confidence: {top_prediction['confidence']:.2%}</span>")
 
-        if top_prediction["confidence"] < 0.6 or sum([pred["confidence"] for pred in sorted_classes]) < 0.9:
+        if response.get("warning"):
             st.html(
-                f"<span style='font-size: 16px; text-align: justify; background-color: #ffc107;'>"
-                + "\U000026A0 WARNING! Low confidence in predictions, mushroom might not be supported yet.</span>"
+                f"<span style='font-size: 16px; text-align: justify; color: #ffc107;'>"
+                + "\U000026A0 WARNING! " + response["warning"] + "</span>"
             )
 
         st.html(f"<div style='text-align: justify;'>{top_text}</div>")
