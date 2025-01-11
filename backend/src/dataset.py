@@ -14,7 +14,7 @@ from dask.delayed import delayed
 from tqdm import tqdm
 
 from src.config import Config
-from src.utils import get_logger, plot_class_distribution
+from src.utils import get_logger, plot_class_distribution, set_all_seeds
 from src.augmentation import get_base_transforms, get_augmentation_list, get_training_transforms
 
 logger = get_logger(__name__)
@@ -35,8 +35,7 @@ class MushroomDataset(Dataset):
         self.train_transform = transform  # Additional transforms for training (normalization)
         self.skip_transform = skip_transform
         
-        random.seed(Config.SEED)
-        torch.manual_seed(Config.SEED)
+        set_all_seeds()
         
         self._setup_dataset()
         self._print_statistics()

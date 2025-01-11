@@ -11,7 +11,7 @@ from src.config import Config
 from src.dataset import create_static_splits, load_prepared_datasets
 from src.trainer import setup_training
 from src.models import create_model
-from src.utils import get_logger
+from src.utils import get_logger, set_all_seeds
 from src.eval import evaluate_model
 
 logger = get_logger(__name__)
@@ -21,9 +21,7 @@ def main():
     results_dir = Path(Config.MODELS_DIR, timestamp)
     results_dir.mkdir(parents=True, exist_ok=True)
     
-    torch.manual_seed(Config.SEED)
-    np.random.seed(Config.SEED)
-    random.seed(Config.SEED)
+    set_all_seeds()
     
     if Config.CREATE_STATIC_SPLITS:
         logger.info("Creating static splits...")

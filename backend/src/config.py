@@ -32,8 +32,8 @@ class Config:
     # Dataset settings
     MAX_AUGMENTATION_FACTOR_PER_IMAGE = 5
     CREATE_STATIC_SPLITS = False # set to true to (re)create static splits, false = use existing ones in the intermediate data directory
-    PLOT_CLASS_DISTRIBUTION = True # set to true to plot the class distribution before and after augmentation
-    BATCH_SIZE = 32 # runs fine on my (lukas) machine. if you run out of memory, reduce this to 16 or 8
+    PLOT_CLASS_DISTRIBUTION = False # set to true to plot the class distribution before and after augmentation
+    BATCH_SIZE = 32 # Dataloader Batchsize. 32 runs fine on my (lukas) machine. if you run out of memory, reduce this to 16 or 8
 
     # General model parameters
     NUM_CLASSES = None  # Will be set dynamically based on dataset
@@ -71,7 +71,6 @@ class Config:
     # Plotting settings
     PLOT_METRICS = True
     PLOT_CONFUSION_MATRIX = True
-
 
     # Logging settings
     LOG_LEVEL = "DEBUG"
