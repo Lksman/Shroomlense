@@ -106,9 +106,9 @@ if uploaded_file:
 
     with left:
         st.html(f"<strong style='font-size: 28px;'>🎯 Top Match</strong>")
-        st.markdown('<div class="main-image">', unsafe_allow_html=True)
+        st.html('<div class="main-image">')
         reload_image(top_mushroom_name)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.html('</div>')
 
     with center:
         st.html(f"<strong style='font-size: 28px;'>📝 Details</strong>")

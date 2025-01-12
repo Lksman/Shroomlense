@@ -6,6 +6,8 @@ from datetime import datetime
 import seaborn as sns
 import matplotlib.pyplot as plt
 import json
+import random
+import numpy as np
 
 from src.config import Config
 ####################################################################################
@@ -144,6 +146,15 @@ def plot_class_distribution(data: dict, title: str, xlabel: str, ylabel: str, sa
     plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
+
+def set_all_seeds() -> None:
+    """Set all seeds to ensure reproducibility."""    
+    random.seed(Config.SEED)
+    np.random.seed(Config.SEED)
+    torch.manual_seed(Config.SEED)
+    torch.cuda.manual_seed_all(Config.SEED)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 if __name__ == '__main__':

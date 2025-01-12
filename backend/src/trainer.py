@@ -9,7 +9,7 @@ import torch.nn as nn
 from sklearn.metrics import f1_score
 import seaborn as sns
 
-from src.utils import get_logger, save_model
+from src.utils import get_logger, save_model, set_all_seeds
 from src.config import Config
 from src.dataset import MushroomDataset
 
@@ -51,6 +51,8 @@ class Trainer:
         }
         
         logger.info(f"Training on device: {device}")
+        
+        set_all_seeds()
 
     def _step(self, images: Tensor, labels: Tensor) -> tuple[Tensor, Tensor]:
         """Perform a single training step.

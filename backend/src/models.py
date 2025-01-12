@@ -4,14 +4,12 @@ import torch.nn as nn
 from torchvision.models import vgg19, VGG19_Weights
 from transformers import ViTForImageClassification
 from src.config import Config
+from src.utils import set_all_seeds
 
 class MushroomVGG19(nn.Module):
     def __init__(self, num_classes: int):
         super().__init__()
-        # Load pretrained VGG19
         self.vgg19 = vgg19(weights=VGG19_Weights.DEFAULT)
-        
-        # Replace classifier
         num_features = self.vgg19.classifier[6].in_features
         self.vgg19.classifier[6] = nn.Linear(num_features, num_classes)
 
@@ -77,6 +75,8 @@ class MushroomCNN(nn.Module):
 
 def create_model(model_name: str, num_classes: int) -> tuple[torch.nn.Module, dict]:
     """Create model and get its config."""
+    set_all_seeds()
+    
     model_mapping = {
         'cnn': MushroomCNN,
         'vgg19': MushroomVGG19,

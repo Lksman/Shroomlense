@@ -5,7 +5,7 @@
 <!-- - [Local PDF](./papers/Automatic_Mushroom_Species_Classification_Model_fo.pdf) -->
 - Criticism: Overestimation of Performance:
     - Data based Flaws:
-        - This paper aims to classify images of 12 different species of mushrooms and gets reasonably good results. Chosen mushroom species are visually distinct, which makes the classification task easier. The authors should have included more visually similar species to test the model's robustness and generalization capabilities.
+        - This paper aims to classify images of 11 different species of mushrooms and gets reasonably good results. Chosen mushroom species are visually distinct, which makes the classification task easier. The authors should have included more visually similar species to test the model's robustness and generalization capabilities.
 
 
 #### Machine Learning and Image Processing-Based System for Identifying Mushrooms Species in Malaysia
